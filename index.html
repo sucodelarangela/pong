@@ -1,0 +1,188 @@
+<meta charset="UTF-8" />
+<canvas width="600" height="400"></canvas>
+<audio loop id="trilha" autoplay="autoplay">
+  <source src="media/trilha.wav" type="audio/wav" />
+  Seu navegador não suporta HTML5
+</audio>
+<audio id="raquetada">
+  <source src="media/raquetada.wav" type="audio/wav" />
+</audio>
+<audio id="ponto">
+  <source src="media/ponto.mp3" type="audio/mp3" />
+</audio>
+
+<script>
+  let cenario = document.querySelector('canvas')
+  let pincel = cenario.getContext('2d')
+
+  //variáveis da bolinha
+  let xBolinha = 300
+  let yBolinha = 200
+  let raio = 10
+
+  //velocidades da bolinha
+  let velocidadeX = 6
+  let velocidadeY = 6
+
+  //variáveis da raquete
+  let xRaquete = 5
+  let yRaquete = 150
+  let largRaquete = 10
+  let altRaquete = 90
+
+  //variáveis do oponente
+  let xOponente = 585
+  let yOponente = 150
+  let largOponente = 10
+  let altOponente = 90
+  let velocidadeYOponente
+
+  //placar do jogo:
+  let meusPontos = 0
+  let pontosOponente = 0
+
+  //sons do jogo:
+  let trilha = document.getElementById('trilha')
+  let raquetada = document.getElementById('raquetada')
+  let ponto = document.getElementById('ponto')
+
+  function desenhaBolinha(xBolinha, yBolinha, raio) {
+    pincel.fillStyle = 'white'
+    pincel.beginPath()
+    pincel.arc(xBolinha, yBolinha, raio, 0, 2 * Math.PI)
+    pincel.fill()
+  }
+
+  function desenhaRaquete(x, y) {
+    pincel.fillStyle = 'white'
+    pincel.fillRect(x, y, largRaquete, altRaquete)
+  }
+
+  function limpaTela() {
+    pincel.fillStyle = 'black'
+    pincel.clearRect(0, 0, 600, 400)
+    pincel.fillRect(0, 0, 600, 400)
+    pincel.fillStyle = 'gray'
+    pincel.fillRect(296, 10, 8, 380)
+  }
+
+  //verificando a colisão com as bordas
+  function checaColisaoBolinha() {
+    if (xBolinha > 600 - raio || xBolinha < 0 + raio) {
+      velocidadeX *= -1
+    } else if (yBolinha > 400 - raio || yBolinha < 0 + raio) {
+      velocidadeY *= -1
+    }
+  }
+
+  //verificando a colisão com as raquetes:
+  function checaColisaoRaquete() {
+    if (
+      xBolinha - raio < xRaquete + largRaquete &&
+      yBolinha - raio < yRaquete + altRaquete &&
+      yBolinha + raio > yRaquete
+    ) {
+      velocidadeX *= -1
+      raquetada.play()
+    }
+  }
+
+  function checaColisaoOponente() {
+    if (
+      xBolinha + raio > xOponente &&
+      yBolinha + raio < yOponente + altOponente &&
+      yBolinha + raio > yOponente
+    ) {
+      velocidadeX *= -1
+      raquetada.play()
+    }
+  }
+
+  function incluiPlacar() {
+    pincel.fillStyle = 'rgb(255, 127, 0)'
+    pincel.lineWidth = 1
+    pincel.strokeStyle = 'gray'
+    pincel.fillRect(150, 10, 40, 20)
+    pincel.strokeRect(150, 10, 40, 20)
+    pincel.fillRect(450, 10, 40, 20)
+    pincel.strokeRect(450, 10, 40, 20)
+    pincel.font = '20px Arial'
+    pincel.fillStyle = 'white'
+    pincel.textAlign = 'center'
+    pincel.fillText(meusPontos, 170, 27)
+    pincel.fillText(pontosOponente, 470, 27)
+  }
+
+  function marcaPonto() {
+    if (xBolinha > 590) {
+      meusPontos++
+      ponto.play()
+    } else if (xBolinha < 10) {
+      pontosOponente++
+      ponto.play()
+    }
+  }
+
+  //keyCodes das setas do teclado
+  // let esquerda = 37
+  let cima = 38
+  // let direita = 39
+  let baixo = 40
+
+  //movimentando a nossa raquete
+  function moveRaquete(evento) {
+    if (evento.keyCode == cima) {
+      yRaquete -= 25
+    } else if (evento.keyCode == baixo) {
+      yRaquete += 25
+    }
+  }
+
+  //movimentando a raquete do oponente
+  function moveOponente() {
+    velocidadeYOponente = yBolinha - yOponente - altRaquete / 2 - 35
+    yOponente += velocidadeYOponente
+  }
+
+  let gameOver = checaPlacar()
+
+  function checaPlacar() {
+    if (meusPontos >= 5 || pontosOponente >= 5) {
+      pincel.clearRect(0, 0, 600, 400)
+      pincel.fillStyle = 'rgb(255, 127, 0)'
+      pincel.font = '100px Arial'
+      pincel.textAlign = 'center'
+      pincel.fillText('GAME OVER', 300, 200)
+      clearInterval(inicio)
+    }
+  }
+
+  //movimentando a bolinha
+  function moveBolinha() {
+    limpaTela()
+    desenhaBolinha(xBolinha, yBolinha, raio)
+    checaColisaoBolinha()
+    desenhaRaquete(xRaquete, yRaquete)
+    checaColisaoRaquete()
+    checaColisaoOponente()
+    desenhaRaquete(xOponente, yOponente)
+    moveOponente()
+    incluiPlacar()
+    marcaPonto()
+    checaPlacar()
+    xBolinha += velocidadeX
+    yBolinha += velocidadeY
+  }
+
+  let inicio = setInterval(moveBolinha, 5)
+
+  function iniciar() {
+    inicio
+    document.onkeydown = moveRaquete
+    if (gameOver) {
+      clearInterval(inicio)
+    }
+  }
+
+  iniciar()
+</script>
